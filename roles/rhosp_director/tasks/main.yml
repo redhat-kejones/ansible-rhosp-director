@@ -22,7 +22,7 @@
     state: present
     reload: yes
 
-- name: Register System with RHN Subscription Manager
+- name: register System with RHN Subscription Manager
   redhat_subscription:
     state: present
     username: "{{ rhn_user }}"
@@ -30,15 +30,15 @@
     pool: "{{ rhn_pool_name }}"
   when: ansible_distribution == 'RedHat'
 
-- name: Test to see if selinux is running
+- name: test to see if selinux is running
   command: getenforce
   register: sestatus
   changed_when: false
 
-- name: Disable all repositories so we can enable just the ones we want
+- name: disable all repositories
   command: subscription-manager repos --disable=\*
 
-- name: Enable the needed rhel repositories
+- name: enable the needed rhel repositories
   command: subscription-manager repos --enable={{ item }}
   with_items: "{{ rhn_repo_channels }}"
 
@@ -89,7 +89,7 @@
     - 'rhosp-director-images'
     - 'rhosp-director-images-ipa'
 
-- name: Update packages
+- name: update packages
   yum:
     name: '*'
     state: latest
