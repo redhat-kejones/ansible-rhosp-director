@@ -19,11 +19,11 @@ Ansible Playbook to install and configure Red Hat OpenStack Platform 10 director
    `$ ansible-playbook --ask-vault-pass -i hosts site.yml`
 
 # Vault Vars
-vault_rhn_user: Red Hat Network Account Username
-vault_rhn_pwd: Red Hat Network Account Password
-vault_rhn_pool_name: Subscription Manager pool name to attach to
-vault_stack_user_pwd: The hashed password to use for the created stack user 
-NOTE: use `$ openssl passwd -salt <salt> -1 <plaintext>` to create the hashed password to enter above
-vault_undercloud_admin_pwd: Password to use for the admin account on the RHOSP-d installation
+vault_rhn_user: Red Hat Network Account Username  
+vault_rhn_pwd: Red Hat Network Account Password  
+vault_rhn_pool_name: Subscription Manager pool name to attach to  
+vault_stack_user_pwd: The hashed password to use for the created stack user  
+NOTE: use `$ openssl passwd -salt <salt> -1 <plaintext>` to create the hashed password to enter above  
+vault_undercloud_admin_pwd: Password to use for the admin account on the RHOSP-d installation  
 
 
