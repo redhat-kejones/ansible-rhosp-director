@@ -3,8 +3,9 @@ Ansible Playbook to install and configure Red Hat OpenStack Platform 10 director
 
 # Prerequisites
 
-- Machine with RHEL 7.3 installed
-- Public key authentication set for root user
+- Machine with RHEL 7.3 installed and 1 interface configured for OpenStack External Network IP
+- Public key authentication set for root user  
+  $ ssh-copy-id root@undercloud
 - Red Hat Network user account with Red Hat OpenStack Platform Subscription available
 
 # Instructions
@@ -25,5 +26,3 @@ vault_rhn_pool_name: Subscription Manager pool name to attach to
 vault_stack_user_pwd: The hashed password to use for the created stack user  
 NOTE: use `$ openssl passwd -salt <salt> -1 <plaintext>` to create the hashed password to enter above  
 vault_undercloud_admin_pwd: Password to use for the admin account on the RHOSP-d installation  
-
-
