@@ -9,14 +9,14 @@ Ansible Playbook to install and configure Red Hat OpenStack Platform 10 director
 
 # Instructions
 
-1 Checkout this repository
-2 Configure roles/rhosp_director/vars/main.yml to match your environment
-3 Create a vaut file at roles/rhosp_director/vars/vault
-  ansible-vault create roles/rhosp_director/vars/vault
-4 Start RHEL system slotted for RHOSP-d installation
-5 Make sure you can ssh to the RHOSP-d machine as root without having to enter a password
-6 Run the playbook
-  ansible-playbook --ask-vault-pass -i hosts site.yml
+1. Checkout this repository
+2. Configure roles/rhosp_director/vars/main.yml to match your environment
+3. Create a vaut file at roles/rhosp_director/vars/vault
+   ansible-vault create roles/rhosp_director/vars/vault
+4. Start RHEL system slotted for RHOSP-d installation
+5. Make sure you can ssh to the RHOSP-d machine as root without having to enter a password
+6. Run the playbook
+   ansible-playbook --ask-vault-pass -i hosts site.yml
 
 # Vault Vars
 vault_rhn_user: Red Hat Network Account Username
