@@ -1,0 +1,2 @@
+#Overall playbook for RHOSP deployment
+- include: rhosp_director.yml

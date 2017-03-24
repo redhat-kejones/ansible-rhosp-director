@@ -1,0 +1,5 @@
+#Playbook for configuring and installing RHOSP director
+- hosts: rhosp_director
+  remote_user: root
+  roles:
+    - rhosp_director

@@ -1,0 +1,51 @@
+rhn_user: "{{ vault_rhn_user }}"
+rhn_pwd: "{{ vault_rhn_pwd }}"
+rhn_pool_name: "{{ vault_rhn_pool_name }}"
+rhn_repo_channels:
+  - rhel-7-server-rpms
+  - rhel-7-server-extras-rpms
+  - rhel-7-server-rh-common-rpms
+  - rhel-ha-for-rhel-7-server-rpms
+  - rhel-7-server-openstack-10-rpms
+  - rhel-7-server-satellite-tools-6.2-rpms
+  - rhel-7-server-rhceph-2-osd-rpms
+  - rhel-7-server-rhceph-2-mon-rpms
+  - rhel-7-server-rhceph-2-tools-rpms
+stack_user_pwd: "{{ vault_stack_user_pwd }}"
+external_ip: 10.16.0.5
+fqdn: undercloud.example.com
+fqdn_short: undercloud
+
+undercloud:
+  image_path: "/home/stack/images"
+  hostname: "{{ fqdn }}"
+  local_interface: eth0
+  local_ip: 172.16.0.5/24
+  public_vip: 10.16.0.5/24
+  admin_vip: 172.16.0.6
+  generate_service_certificate: false
+  #If generate_service_certificate is true, leave three below as-is
+  undercloud_service_certificate:
+  certificate_generation_ca: local
+  service_principal:
+  network_cidr: 172.16.0.0/24
+  network_gateway: 172.16.0.1
+  masquerade_network: 172.16.0.0/24
+  dhcp_start: 172.16.0.80
+  dhcp_end: 172.16.0.100
+  inspection_interface: br-ctlplane
+  inspection_start: 172.16.0.200
+  inspection_end: 172.16.0.220
+  inspection_runbench: false
+  inspection_enable_uefi: true
+  debug: false
+  enable_tempest: false
+  enable_validations: true
+  enable_mistral: true
+  enable_zaqar: true
+  enable_telemetry: true
+  enable_ui: true
+  ipxe_enabled: true
+  store_events: false
+  clean_nodes: false
+  admin_password: "{{ vault_undercloud_admin_pwd }}"
