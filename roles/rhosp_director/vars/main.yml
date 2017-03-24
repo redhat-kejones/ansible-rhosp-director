@@ -35,11 +35,11 @@ undercloud:
   # portion of the value
   local_ip: 172.16.0.5/24
   # Virtual IP address to use for the public endpoints of Undercloud services
-  public_vip: 10.16.0.5/24
+  public_vip: 10.16.0.5
   # Virtual IP address to use for the admin endpoints of Undercloud services.
   admin_vip: 172.16.0.6
   # Generate certificate file to use for OpenStack service SSL connections.
-  generate_service_certificate: false
+  generate_service_certificate: true
   #If generate_service_certificate is true, leave three below as-is
   undercloud_service_certificate:
   certificate_generation_ca: local

@@ -238,7 +238,7 @@
   args:
     chdir: /home/stack/images
 
-- name: set Debug flag to false in DEFAULT section
+- name: set debug flag to false in DEFAULT section
   ini_file:
     dest: "{{ item }}"
     section: DEFAULT
