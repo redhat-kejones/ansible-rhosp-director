@@ -1,6 +1,8 @@
+# Red Hat Network subscription information
 rhn_user: "{{ vault_rhn_user }}"
 rhn_pwd: "{{ vault_rhn_pwd }}"
 rhn_pool_name: "{{ vault_rhn_pool_name }}"
+# Red Hat repositories required for undercloud install
 rhn_repo_channels:
   - rhel-7-server-rpms
   - rhel-7-server-extras-rpms
@@ -12,40 +14,91 @@ rhn_repo_channels:
   - rhel-7-server-rhceph-2-mon-rpms
   - rhel-7-server-rhceph-2-tools-rpms
 stack_user_pwd: "{{ vault_stack_user_pwd }}"
+# IP of undercloud machine on OpenStack external network
 external_ip: 10.16.0.5
+# Short and long hostnames for undercloud machine
 fqdn: undercloud.example.com
 fqdn_short: undercloud
-
+# All variales for undercloud.conf
 undercloud:
+  # Path where inspector and overcloud images will be stored
   image_path: "/home/stack/images"
+  # Hostname of the undercloud machine
   hostname: "{{ fqdn }}"
+  # Network interface on the Undercloud that will be handling the PXE
+  # boots and DHCP for Overcloud instances
   local_interface: eth0
+  # IP information for the interface on the Undercloud that will be
+  # handling the PXE boots and DHCP for Overcloud instances.  The IP
+  # portion of the value will be assigned to the network interface
+  # defined by local_interface, with the netmask defined by the prefix
+  # portion of the value
   local_ip: 172.16.0.5/24
+  # Virtual IP address to use for the public endpoints of Undercloud services
   public_vip: 10.16.0.5/24
+  # Virtual IP address to use for the admin endpoints of Undercloud services.
   admin_vip: 172.16.0.6
+  # Generate certificate file to use for OpenStack service SSL connections.
   generate_service_certificate: false
   #If generate_service_certificate is true, leave three below as-is
   undercloud_service_certificate:
   certificate_generation_ca: local
   service_principal:
+  # Network CIDR for the Neutron-managed network for Overcloud
+  # instances. This should be the subnet used for PXE booting
   network_cidr: 172.16.0.0/24
+  # Network gateway for the Neutron-managed network for Overcloud
+  # instances. This should match the local_ip above when using masquerading
   network_gateway: 172.16.0.1
+  # Network that will be masqueraded for external access, if required.
+  # This should be the subnet used for PXE booting
   masquerade_network: 172.16.0.0/24
+  # Start of DHCP allocation range for PXE and DHCP of Overcloud instances
   dhcp_start: 172.16.0.80
+  # End of DHCP allocation range for PXE and DHCP of Overcloud instances
   dhcp_end: 172.16.0.100
+  # Network interface on which discovery dnsmasq will listen.  If in
+  # doubt, use the default value
   inspection_interface: br-ctlplane
+  # Temporary IP range that will be given to nodes during the discovery
+  # process.  Should not overlap with the range defined by dhcp_start
+  # and dhcp_end, but should be in the same network
   inspection_start: 172.16.0.200
   inspection_end: 172.16.0.220
+  # Whether to run benchmarks when discovering nodes
   inspection_runbench: false
+  # Whether to enable uefi booting for introspection
   inspection_enable_uefi: true
+  # Whether to enable the debug log level for Undercloud OpenStack services
   debug: false
+  # Defines whether to install the validation tools. The default is set
+  # to false, but you can can enable using true
   enable_tempest: false
+  # Whether to enable TripleO validations on the undercloud
   enable_validations: true
+  # Defines whether to install the OpenStack Workflow Service (mistral)
+  # in the undercloud
   enable_mistral: true
+  # Defines whether to install the OpenStack Messaging Service (zaqar)
+  # in the undercloud
   enable_zaqar: true
+  # Defines whether to install OpenStack Telemetry (ceilometer, aodh)
+  # services in the undercloud
   enable_telemetry: true
+  # Defines Whether to install the director’s web UI. This allows
+  # you to perform overcloud planning and deployments through a
+  # graphical web interface. For more information, see Chapter 6,
+  # Configuring Basic Overcloud Requirements with the Web UI. Note
+  # that the UI is only available with SSL/TLS enabled using either
+  # the undercloud_service_certificate or generate_service_certificate
   enable_ui: true
+  # Defines whether to use iPXE or standard PXE. The default is true,
+  # which enables iPXE. Set to false to set to standard PXE
   ipxe_enabled: true
+  # Defines whether to store events in Ceilometer on the Undercloud
   store_events: false
+  # Defines whether to wipe the hard drive of overcloud nodes between
+  # deployments and after the introspection
   clean_nodes: false
+  # Set admin password for undercloud
   admin_password: "{{ vault_undercloud_admin_pwd }}"
