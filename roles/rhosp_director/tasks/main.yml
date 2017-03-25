@@ -102,19 +102,10 @@
   ignore_errors: true
   register: reboot_hint
 
-- name: stop and disable cloud-init
-  systemd:
+- name: make sure cloud-init is not installed
+  yum:
     name: cloud-init
-    state: stopped
-    enabled: no
-  ignore_errors: true
-
-- name: setting provisioning interface onboot=no
-  lineinfile:
-    dest: /etc/sysconfig/network-scripts/ifcfg-{{ undercloud['local_interface'] }}
-    state: present
-    regexp: '^ONBOOT'
-    line: 'ONBOOT=no'
+    state: absent
 
 - name: restart undercloud machine to get updated kernel
   shell: sleep 2 && shutdown -r now "Ansible Restart Triggered for Undercloud Install"
@@ -134,6 +125,13 @@
   delegate_to: 127.0.0.1
   become: false
   ignore_errors: true
+
+- name: setting provisioning interface onboot=no
+  lineinfile:
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ undercloud['local_interface'] }}
+    state: present
+    regexp: '^ONBOOT'
+    line: 'ONBOOT=no'
 
 - name: copy undercloud.conf template
   become: yes
