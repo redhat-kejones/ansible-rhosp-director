@@ -1,0 +1,129 @@
+---
+- name: register and introspect overcloud nodes
+  hosts: rhosp_director
+  remote_user: root
+  vars_files:
+    - vars.yml
+  #TODO: Have this probe IP range, create instackenv.json file
+
+  vars:
+  #  instackenv_file: "/home/stack/instackenv.json"
+    poweroff: true
+    bootdev: network
+
+  - name: create instackenv file
+    copy:
+      content: "{{ lookup('template', 'templates/instackenv.json.j2') | to_nice_json }}"
+      dest: "/home/stack/instackenv.json"
+
+  - name: ping check on IPMI IP
+    shell: ping -c 1 -w 3 {{ item.pm_addr }}
+    register: ping_response
+    ignore_errors: true
+    with_items: "{{ overcloud_nodes }}"
+
+  - name: debug ping responses
+    debug:
+      msg: "{{ item }}"
+    with_items: "{{ ping_response.results }}"
+
+  - name: set validation errors for failed pings
+    set_fact:
+      validation_errors: "{{ validation_errors }} + [ 'unable to ping {{ item.item.pm_addr }}' ]"
+    when: "item.rc != 0"
+    with_items: "{{ ping_response.results }}"
+#
+#   # Handle pxe_ssh driver
+#   - name: Make sure the known hosts file exists
+#     file: "path=/home/stack/.ssh/known_hosts state=touch"
+#     when: overcloud.pm_driver == "pxe_ssh"
+#
+#   - name: Check host name availability
+#     shell: "ssh-keygen -f /home/stack/.ssh/known_hosts -F {{ item.value }}"
+#     with_dict: "{{ overcloud_nodes }}"
+#     register: ssh_known_host_results
+#     ignore_errors: yes
+#     when: overcloud.pm_driver == "pxe_ssh"
+#
+#   - name: debug validation errors
+#     debug:
+#       msg: "{{ item.stdout }}"
+#     with_dict: "{{ ssh_known_host_results.results }}"
+#
+#   - name: Scan the public key
+#     shell: "ssh-keyscan -H -T 10 {{ item.item }} >> /home/stack/.ssh/known_hosts"
+#     with_dict: ssh_known_host_results.results
+#     when: item.stdout == ""
+#
+#   - name: copy stack SSH key to Hypervisor when using pxe_ssh driver
+#     command: sshpass -p {{ overcloud.pm_pwd }} ssh-copy-id -i /home/stack/.ssh/id_rsa.pub {{ overcloud.pm_user }}@{{ item.value }}
+#     with_dict: "{{ overcloud_nodes }}"
+#     when: overcloud.pm_driver == "pxe_ssh"
+#
+# #  - name: Set authorized key took from file
+# #    authorized_key:
+# #      user: stack
+# #      state: present
+# #      key: "{{ lookup('file', '/home/stack/.ssh/id_rsa.pub') }}"
+# #      validate_certs: False
+# #    when: overcloud["pm_driver"] == "pxe_ssh"
+# #
+  # Handle pxe_ipmitool
+  - name: ensure ipmi boot network
+    ipmi_boot:
+      name: "{{ item.pm_addr }}"
+      user: "{{ item.pm_user }}"
+      password: "{{ item.pm_pwd }}"
+      bootdev: "{{ bootdev|default('network') }}"
+      state: present
+    when: "item.pm_driver == 'pxe_ipmitool'"
+    register: ipmi_boot
+    with_items: "{{ overcloud_nodes }}"
+    ignore_errors: true
+    no_log: true
+
+  - name: set validation errors as needed for ipmi issues
+    set_fact:
+      validation_errors: "{{ validation_errors }} + [ 'error checking ipmi on {{ item.item.pm_addr }} - please confirm credentials access and IPMI configuration ' ]"
+    when: "{{ item.failed|default('false')|bool }}"
+    with_items: "{{ ipmi_boot.results }}"
+    no_log: true
+
+  - name: debug validation errors
+    debug:
+      msg: "{{ item }}"
+    with_items: "{{ validation_errors }}"
+
+  - name: read instackenv file into var
+    set_fact:
+      instackenv: "{{ lookup('file', '/home/stack/instackenv.json') }}"
+    ignore_errors: true
+
+  - name: set instackenv fact if its undefined
+    set_fact:
+      instackenv: "{{ instackenv|default({}) | combine( { 'nodes': [] } ) }}"
+    when: 'instackenv is not defined'
+
+  - name: set empty validation errors fact
+    set_fact:
+      validation_errors: []
+
+  - name: poweroff all servers when poweroff == true
+    ipmi_power:
+      name: "{{ item.pm_addr }}"
+      user: "{{ item.pm_user }}"
+      password: "{{ item.pm_pwd }}"
+      state: off
+    no_log: true
+    with_items: "{{ overcloud_nodes }}"
+    when: 'poweroff|bool'
+    ignore_errors: true
+
+  - name: check failure
+    fail:
+      msg: "\n - {{ validation_errors|join('\n') }}"
+    when: validation_errors|length > 0
+
+  - name: success
+    debug:
+      msg: ipmi completely validated
