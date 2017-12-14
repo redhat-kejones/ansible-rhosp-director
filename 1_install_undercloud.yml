@@ -89,10 +89,6 @@
       debug:
         msg: "Sudoers: {{ sudoers_output }}"
 
-    # Added for https://access.redhat.com/solutions/3134931
-    - name: install glibc.i686 and nspr for yum bug 3134931
-      shell: yum install -y glibc.i686 nspr
-
     - name: install several useful utility and undercloud packages
       yum:
         name: "{{ item }}"
@@ -179,10 +175,12 @@
       with_items:
         - { key: image_path, value: "/home/stack/images" }
         - { key: undercloud_hostname, value: "{{ undercloud['hostname_full'] }}" }
+        - { key: overcloud_domain_name, value: "{{ undercloud['cloud_domain'] }}" }
         - { key: local_ip, value: "{{ undercloud['provisioning_ip'] }}" }
+        - { key: local_interface, value: "{{ undercloud['provisioning_interface'] }}" }
+        - { key: local_mtu, value: "1500" }
         - { key: undercloud_public_vip, value: "{{ undercloud['external_ip'] }}" }
         - { key: undercloud_admin_vip, value: "{{ undercloud['admin_apis_vip'] }}" }
-        - { key: local_interface, value: "{{ undercloud['provisioning_interface'] }}" }
         - { key: generate_service_certificate, value: "true" }
         - { key: certificate_generate_ca, value: "local" }
         - { key: undercloud_service_certificate, value: ""}
@@ -206,6 +204,9 @@
         - { key: ipxe_enabled, value: "true"}
         - { key: store_events, value: "true" }
         - { key: clean_nodes, value: "{{ undercloud['clean_nodes'] }}"}
+        - { key: undercloud_name_servers, value: "{{ undercloud['name_servers'] }}"}
+        - { key: undercloud_ntp_servers, value: "{{ undercloud['ntp_servers'] }}"}
+
 
     - name: set undercloud.conf variables in the auth section
       become: yes
@@ -258,6 +259,16 @@
       args:
         chdir: /home/stack/images
 
+    - name: adding dns to ctlplane subnet
+      become: yes
+      become_user: stack
+      shell: source /home/stack/stackrc && openstack subnet set --dns-nameserver {{ undercloud['name_servers'] }} $(openstack subnet list | awk '/192.168.2/ {print $2}')
+
+    - name: configuring fernet tokens for overcloud
+      become: yes
+      become_user: stack
+      shell: source /home/stack/stackrc && sudo keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone && sudo tar -zcf /home/stack/keystone-fernet-keys.tar.gz /etc/keystone/fernet-keys && upload-swift-artifacts -f /home/stack/keystone-fernet-keys.tar.gz
+
     - name: set debug flag to false in DEFAULT section
       ini_file:
         dest: "{{ item }}"
@@ -281,6 +292,12 @@
       with_items:
         - 'metering_time_to_live'
         - 'event_time_to_live'
+
+    - name: Change dhcp_domain in nova.conf
+      lineinfile:
+        dest: /etc/nova/nova.conf
+        regexp: '^dhcp_domain='
+        line: "dhcp_domain={{ undercloud['cloud_domain'] }}"
 
     - name: restart openstack services
       service:

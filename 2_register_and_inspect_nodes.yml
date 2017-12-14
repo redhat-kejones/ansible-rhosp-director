@@ -6,32 +6,41 @@
     - vars.yml
   #TODO: Have this probe IP range, create instackenv.json file
 
-  vars:
   #  instackenv_file: "/home/stack/instackenv.json"
+  vars:
     poweroff: true
     bootdev: network
+    validation_errors: []
 
-  - name: create instackenv file
-    copy:
-      content: "{{ lookup('template', 'templates/instackenv.json.j2') | to_nice_json }}"
-      dest: "/home/stack/instackenv.json"
+  tasks:
+    - name: install several useful utility and undercloud packages
+      yum:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - python-pyghmi
 
-  - name: ping check on IPMI IP
-    shell: ping -c 1 -w 3 {{ item.pm_addr }}
-    register: ping_response
-    ignore_errors: true
-    with_items: "{{ overcloud_nodes }}"
+    - name: create instackenv file
+      copy:
+        content: "{{ lookup('template', 'templates/instackenv.json.j2') | to_nice_json }}"
+        dest: "/home/stack/instackenv.json"
 
-  - name: debug ping responses
-    debug:
-      msg: "{{ item }}"
-    with_items: "{{ ping_response.results }}"
+    - name: ping check on IPMI IP
+      command: ping -c 2 -w 5 {{ item.pm_addr }}
+      register: ping_response
+      ignore_errors: true
+      with_items: "{{ overcloud_nodes }}"
 
-  - name: set validation errors for failed pings
-    set_fact:
-      validation_errors: "{{ validation_errors }} + [ 'unable to ping {{ item.item.pm_addr }}' ]"
-    when: "item.rc != 0"
-    with_items: "{{ ping_response.results }}"
+    - name: debug ping responses
+      debug:
+        msg: "{{ item }}"
+      with_items: "{{ ping_response.results }}"
+
+    - name: set validation errors for failed pings
+      set_fact:
+        validation_errors: "{{ validation_errors }} + [ 'unable to ping {{ item.item.pm_addr }}' ]"
+      when: "item.rc != 0"
+      with_items: "{{ ping_response.results }}"
 #
 #   # Handle pxe_ssh driver
 #   - name: Make sure the known hosts file exists
@@ -69,61 +78,70 @@
 # #    when: overcloud["pm_driver"] == "pxe_ssh"
 # #
   # Handle pxe_ipmitool
-  - name: ensure ipmi boot network
-    ipmi_boot:
-      name: "{{ item.pm_addr }}"
-      user: "{{ item.pm_user }}"
-      password: "{{ item.pm_pwd }}"
-      bootdev: "{{ bootdev|default('network') }}"
-      state: present
-    when: "item.pm_driver == 'pxe_ipmitool'"
-    register: ipmi_boot
-    with_items: "{{ overcloud_nodes }}"
-    ignore_errors: true
-    no_log: true
+    - name: ensure ipmi boot network
+      ipmi_boot:
+        name: "{{ item.pm_addr }}"
+        user: "{{ item.pm_user }}"
+        password: "{{ item.pm_pwd }}"
+        bootdev: "{{ bootdev|default('network') }}"
+        state: present
+      when: "item.pm_driver == 'pxe_ipmitool'"
+      register: ipmi_boot
+      with_items: "{{ overcloud_nodes }}"
+      ignore_errors: true
+      #no_log: true
 
-  - name: set validation errors as needed for ipmi issues
-    set_fact:
-      validation_errors: "{{ validation_errors }} + [ 'error checking ipmi on {{ item.item.pm_addr }} - please confirm credentials access and IPMI configuration ' ]"
-    when: "{{ item.failed|default('false')|bool }}"
-    with_items: "{{ ipmi_boot.results }}"
-    no_log: true
+    - name: set validation errors as needed for ipmi issues
+      set_fact:
+        validation_errors: "{{ validation_errors }} + [ 'error checking ipmi on {{ item.item.pm_addr }} - please confirm credentials access and IPMI configuration ' ]"
+      when: "{{ item.failed|default('false')|bool }}"
+      with_items: "{{ ipmi_boot.results }}"
+      #no_log: true
 
-  - name: debug validation errors
-    debug:
-      msg: "{{ item }}"
-    with_items: "{{ validation_errors }}"
+    - name: debug validation errors
+      debug:
+        msg: "{{ item }}"
+      with_items: "{{ validation_errors }}"
 
-  - name: read instackenv file into var
-    set_fact:
-      instackenv: "{{ lookup('file', '/home/stack/instackenv.json') }}"
-    ignore_errors: true
+#    - name: read instackenv file into var
+#      set_fact:
+#        instackenv: "{{ lookup('file', '/home/stack/instackenv.json') }}"
+#      ignore_errors: true
 
-  - name: set instackenv fact if its undefined
-    set_fact:
-      instackenv: "{{ instackenv|default({}) | combine( { 'nodes': [] } ) }}"
-    when: 'instackenv is not defined'
+#    - name: set instackenv fact if its undefined
+#      set_fact:
+#        instackenv: "{{ instackenv|default({}) | combine( { 'nodes': [] } ) }}"
+#      when: 'instackenv is not defined'
 
-  - name: set empty validation errors fact
-    set_fact:
-      validation_errors: []
+#    - name: set empty validation errors fact
+#      set_fact:
+#        validation_errors: []
 
-  - name: poweroff all servers when poweroff == true
-    ipmi_power:
-      name: "{{ item.pm_addr }}"
-      user: "{{ item.pm_user }}"
-      password: "{{ item.pm_pwd }}"
-      state: off
-    no_log: true
-    with_items: "{{ overcloud_nodes }}"
-    when: 'poweroff|bool'
-    ignore_errors: true
+    - name: poweroff all servers when poweroff == true
+      ipmi_power:
+        name: "{{ item.pm_addr }}"
+        user: "{{ item.pm_user }}"
+        password: "{{ item.pm_pwd }}"
+        state: off
+      #no_log: true
+      with_items: "{{ overcloud_nodes }}"
+      when: 'poweroff|bool'
+      ignore_errors: true
 
-  - name: check failure
-    fail:
-      msg: "\n - {{ validation_errors|join('\n') }}"
-    when: validation_errors|length > 0
+    - name: check failure
+      fail:
+        msg: "\n - {{ validation_errors|join('\n') }}"
+      when: validation_errors is defined and validation_errors|length > 0
 
-  - name: success
-    debug:
-      msg: ipmi completely validated
+    - name: import introspect and provide nodes
+      become: yes
+      become_user: stack
+      shell: source /home/stack/stackrc && openstack overcloud node import --introspect --provide instackenv.json
+      args:
+        chdir: /home/stack
+      async: 2700
+      poll: 30
+
+    - name: success
+      debug:
+        msg: ipmi completely validated

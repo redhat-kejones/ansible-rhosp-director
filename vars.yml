@@ -1,5 +1,5 @@
 # Red Hat OpenStack Platform Version (10,11)
-rhosp_version: 11
+rhosp_version: 10
 
 # Red Hat Network subscription information
 # NOTE: If register_undercloud is false, it is assumed the designated host will have access to
@@ -15,10 +15,13 @@ stack_user_pwd: "{{ vault_stack_user_pwd }}"
 
 # All variales for undercloud.conf
 undercloud:
+  cloud_domain: example.com
   hostname_full: undercloud.example.com
   hostname_short: undercloud
+  name_servers: 8.8.8.8
+  ntp_servers: time.google.com
   # IP of undercloud machine on OpenStack external network
-  external_ip: 192.168.123.5
+  external_ip: 192.168.0.10
   # Network interface on the Undercloud that will be handling the PXE
   # boots and DHCP for Overcloud instances
   provisioning_interface: eth0
@@ -27,24 +30,24 @@ undercloud:
   # portion of the value will be assigned to the network interface
   # defined by local_interface, with the netmask defined by the prefix
   # portion of the value
-  provisioning_ip: 172.16.0.10/24
+  provisioning_ip: 192.168.2.10/24
   # Network CIDR for the Neutron-managed network for Overcloud
   # instances. This should be the subnet used for PXE booting
-  provisioning_network_cidr: 172.16.0.0/24
+  provisioning_network_cidr: 192.168.2.0/24
   # Network gateway for the Neutron-managed network for Overcloud
   # instances. This should match the local_ip above when using masquerading
-  provisioning_network_gateway: 172.16.0.1
+  provisioning_network_gateway: 192.168.2.10
   # Virtual IP address to use for the admin endpoints of Undercloud services.
-  admin_apis_vip: 172.16.0.11
+  admin_apis_vip: 192.168.2.11
   # Temporary IP range that will be given to nodes during the discovery
   # process.  Should not overlap with the range defined by dhcp_start
   # and dhcp_end, but should be in the same network
-  inspection_dhcp_start: 172.16.0.40
-  inspection_dhcp_end: 172.16.0.59
+  inspection_dhcp_start: 192.168.2.40
+  inspection_dhcp_end: 192.168.2.59
   # Start of DHCP allocation range for PXE and DHCP of Overcloud instances
-  deploy_dhcp_start: 172.16.0.20
+  deploy_dhcp_start: 192.168.2.20
   # End of DHCP allocation range for PXE and DHCP of Overcloud instances
-  deploy_dhcp_end: 172.16.0.39
+  deploy_dhcp_end: 192.168.2.39
   # Defines whether to wipe the hard drive of overcloud nodes between
   # deployments and after the introspection
   clean_nodes: false
@@ -53,51 +56,34 @@ undercloud:
 
 overcloud_nodes:
   - name: node1
-    pm_addr: "192.168.1.21"
-    pm_user: "ADMIN"
-    pm_pwd: "ADMIN"
+    profile: control
+    pm_addr: "192.168.2.201"
+    pm_user: ""
+    pm_pwd: ""
     #NOTE: If pxe_ssh, ipmi_addr should be IP of hypervisor. If pxe_ipmitool,
     #      should be a list of IPs to check and register
     pm_driver: "pxe_ipmitool"
   - name: node2
-    pm_addr: "192.168.1.22"
-    pm_user: "ADMIN"
-    pm_pwd: "ADMIN"
+    profile: compute
+    pm_addr: "192.168.2.202"
+    pm_user: ""
+    pm_pwd: ""
     #NOTE: If pxe_ssh, ipmi_addr should be IP of hypervisor. If pxe_ipmitool,
     #      should be a list of IPs to check and register
     pm_driver: "pxe_ipmitool"
   - name: node3
-    pm_addr: "192.168.1.23"
-    pm_user: "ADMIN"
-    pm_pwd: "ADMIN"
+    profile: compute
+    pm_addr: "192.168.2.203"
+    pm_user: ""
+    pm_pwd: ""
     #NOTE: If pxe_ssh, ipmi_addr should be IP of hypervisor. If pxe_ipmitool,
     #      should be a list of IPs to check and register
     pm_driver: "pxe_ipmitool"
   - name: node4
-    pm_addr: "192.168.1.24"
-    pm_user: "ADMIN"
-    pm_pwd: "ADMIN"
-    #NOTE: If pxe_ssh, ipmi_addr should be IP of hypervisor. If pxe_ipmitool,
-    #      should be a list of IPs to check and register
-    pm_driver: "pxe_ipmitool"
-  - name: node5
-    pm_addr: "192.168.1.25"
-    pm_user: "ADMIN"
-    pm_pwd: "ADMIN"
-    #NOTE: If pxe_ssh, ipmi_addr should be IP of hypervisor. If pxe_ipmitool,
-    #      should be a list of IPs to check and register
-    pm_driver: "pxe_ipmitool"
-  - name: node6
-    pm_addr: "192.168.1.26"
-    pm_user: "ADMIN"
-    pm_pwd: "ADMIN"
-    #NOTE: If pxe_ssh, ipmi_addr should be IP of hypervisor. If pxe_ipmitool,
-    #      should be a list of IPs to check and register
-    pm_driver: "pxe_ipmitool"
-  - name: node7
-    pm_addr: "192.168.1.27"
-    pm_user: "ADMIN"
-    pm_pwd: "ADMIN"
+    profile: compute
+    pm_addr: "192.168.2.204"
+    pm_user: ""
+    pm_pwd: ""
     #NOTE: If pxe_ssh, ipmi_addr should be IP of hypervisor. If pxe_ipmitool,
     #      should be a list of IPs to check and register
     pm_driver: "pxe_ipmitool"
